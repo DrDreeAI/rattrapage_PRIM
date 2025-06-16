@@ -1,0 +1,5 @@
+[
+  { "line": "M1", "from": "La Défense", "to": "Châtelet", "position_average": "Avant" },
+  { "line": "M1", "from": "Châtelet", "to": "Nation", "position_average": "Milieu" },
+  { "line": "M14", "from": "Gare de Lyon", "to": "Châtelet", "position_average": "Arrière" }
+]
