@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import '../models/ligne.dart';
 
 Future<List<Ligne>> loadRatpData() async {
-  final String jsonString = await rootBundle.loadString('assets/ratp_data.json');
-  final List<dynamic> jsonList = json.decode(jsonString);
-  return jsonList.map((json) => Ligne.fromJson(json)).toList();
+  final String dataString = await rootBundle.loadString('assets/ratp_data.json');
+  final List<dynamic> jsonData = json.decode(dataString);
+  return jsonData.map((item) => Ligne.fromJson(item)).toList();
 }

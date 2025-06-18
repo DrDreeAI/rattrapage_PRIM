@@ -1,33 +1,24 @@
 import 'package:flutter/material.dart';
-import '../models/ligne.dart';
 
 class ResultScreen extends StatelessWidget {
-  final List<List<Ligne>> trajets;
+  final List<List<String>> steps;
 
-  const ResultScreen({super.key, required this.trajets});
+  const ResultScreen({super.key, required this.steps});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Résultats")),
-      body: ListView.builder(
-        itemCount: trajets.length,
+      appBar: AppBar(title: const Text("Trajet trouvé")),
+      body: ListView.separated(
+        itemCount: steps.length,
+        separatorBuilder: (context, i) => const Divider(),
         itemBuilder: (context, index) {
-          final trajet = trajets[index];
-          return Card(
-            margin: const EdgeInsets.all(10),
-            child: ListTile(
-              title: Text(
-                trajet.map((e) => e.line).join(" → "),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: trajet
-                    .map((e) =>
-                    Text("${e.from} → ${e.to} (${e.position})"))
-                    .toList(),
-              ),
+          final etape = steps[index];
+          return ListTile(
+            leading: const Icon(Icons.directions_transit),
+            title: Text(
+              "Prendre la ligne ${etape[2]} de ${etape[0]} à ${etape[1]}",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           );
         },
