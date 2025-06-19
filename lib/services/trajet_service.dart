@@ -15,10 +15,8 @@ String normalize(String s) {
       .replaceAll(RegExp(r"[ç]"), "c");
 }
 
-// Mapping ligne → ensemble de stations (normalisées)
 Map<String, Set<String>> computeStationsPerLine(List<Ligne> data) {
   final Map<String, Set<String>> ligneToStations = {};
-
   for (final l in data) {
     if (l.fromType == "stop_point") {
       ligneToStations.putIfAbsent(l.lineName, () => {}).add(normalize(l.fromName));
@@ -30,10 +28,8 @@ Map<String, Set<String>> computeStationsPerLine(List<Ligne> data) {
   return ligneToStations;
 }
 
-// Mapping station → ensemble de lignes (par nom normalisé)
 Map<String, Set<String>> computeLinesPerStation(List<Ligne> data) {
   final Map<String, Set<String>> stationToLignes = {};
-
   for (final l in data) {
     if (l.fromType == "stop_point") {
       stationToLignes.putIfAbsent(normalize(l.fromName), () => {}).add(l.lineName);
@@ -45,8 +41,7 @@ Map<String, Set<String>> computeLinesPerStation(List<Ligne> data) {
   return stationToLignes;
 }
 
-// Retourne une liste d'étapes : chaque étape = [depart, arrivee, ligne]
-List<List<String>> findSimpleTrajet(String start, String end, List<Ligne> data) {
+List<List<List<String>>> findMultipleTrajets(String start, String end, List<Ligne> data, {int maxResults = 5}) {
   final ligneToStations = computeStationsPerLine(data);
   final stationToLignes = computeLinesPerStation(data);
 
@@ -56,16 +51,22 @@ List<List<String>> findSimpleTrajet(String start, String end, List<Ligne> data) 
   final lignesStart = stationToLignes[normStart] ?? {};
   final lignesEnd = stationToLignes[normEnd] ?? {};
 
-  // 1. Trajet direct (même ligne)
+  final List<List<List<String>>> results = [];
+  final Set<String> seen = {};
+
   for (final ligne in lignesStart) {
     if (lignesEnd.contains(ligne)) {
-      return [
-        [start, end, ligne]
-      ];
+      final hash = "$start-$end-$ligne";
+      if (!seen.contains(hash)) {
+        results.add([
+          [start, end, ligne]
+        ]);
+        seen.add(hash);
+      }
     }
+    if (results.length >= maxResults) return results;
   }
 
-  // 2. 1 correspondance
   for (final ligneStart in lignesStart) {
     for (final ligneEnd in lignesEnd) {
       if (ligneStart == ligneEnd) continue;
@@ -74,21 +75,26 @@ List<List<String>> findSimpleTrajet(String start, String end, List<Ligne> data) 
       final inter = stationsStart.intersection(stationsEnd);
       for (final s in inter) {
         if (s != normStart && s != normEnd) {
-          return [
-            [start, s, ligneStart],
-            [s, end, ligneEnd],
-          ];
+          final hash = "$start-$s-$ligneStart-$s-$end-$ligneEnd";
+          if (!seen.contains(hash)) {
+            results.add([
+              [start, s, ligneStart],
+              [s, end, ligneEnd],
+            ]);
+            seen.add(hash);
+          }
         }
+        if (results.length >= maxResults) return results;
       }
     }
   }
 
-  // 3. 2 correspondances
   for (final ligneStart in lignesStart) {
     for (final midLigne in ligneToStations.keys) {
       if (midLigne == ligneStart) continue;
       final stationsStart = ligneToStations[ligneStart]!;
       final stationsMid = ligneToStations[midLigne]!;
+
       final interStartMid = stationsStart.intersection(stationsMid);
       for (final midStation in interStartMid) {
         if (midStation == normStart) continue;
@@ -99,17 +105,21 @@ List<List<String>> findSimpleTrajet(String start, String end, List<Ligne> data) 
           final interMidEnd = stationsMid.intersection(stationsEnd);
           for (final finalStation in interMidEnd) {
             if (finalStation == normStart || finalStation == normEnd || finalStation == midStation) continue;
-            return [
-              [start, midStation, ligneStart],
-              [midStation, finalStation, midLigne],
-              [finalStation, end, ligneEnd],
-            ];
+            final hash = "$start-$midStation-$ligneStart-$midStation-$finalStation-$midLigne-$finalStation-$end-$ligneEnd";
+            if (!seen.contains(hash)) {
+              results.add([
+                [start, midStation, ligneStart],
+                [midStation, finalStation, midLigne],
+                [finalStation, end, ligneEnd],
+              ]);
+              seen.add(hash);
+            }
+            if (results.length >= maxResults) return results;
           }
         }
       }
     }
   }
 
-  // Aucun trajet trouvé
-  return [];
+  return results;
 }

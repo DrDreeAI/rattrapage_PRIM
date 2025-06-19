@@ -21,4 +21,8 @@ flutter:
 
   assets:
     - assets/ratp_data.json
+    - assets/metro_arriere.png
+    - assets/metro_milieu.png
+    - assets/metro_avant.png
+
 
